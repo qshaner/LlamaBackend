@@ -9,7 +9,8 @@ Initial backend codebase for LlamaRama.
 ```
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+pip install -e .
 ```
 
 ## Running for Development
@@ -18,4 +19,4 @@ pip install -r requirements.txt
 flask run --debug
 ```
 
-This will make the application available on `localhost:5000`.
+This will make the application available on `localhost:5000` with live-reloading.
