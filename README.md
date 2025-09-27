@@ -16,7 +16,7 @@ pip install -e .
 ## Running for Development
 
 ```
-flask run --debug
+flask run --debug --host=0.0.0.0
 ```
 
 This will make the application available on `localhost:5000` with live-reloading.
