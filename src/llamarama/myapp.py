@@ -1,12 +1,85 @@
-from flask import Blueprint
+from flask import (
+    abort,
+    Blueprint,
+    jsonify,
+    request,
+)
+import json
+from werkzeug.exceptions import BadRequest
 
 simple_page = Blueprint("simple_page", __name__)
 
-COUNTER: int = 0
+COUNTERS: dict[str, int] = {}
 
 
-@simple_page.route("/")
+@simple_page.route("/", methods=["GET"])
 def hello_world():
-    global COUNTER
-    COUNTER = COUNTER + 1
-    return {"counter": COUNTER}
+    global COUNTERS
+
+    try:
+        content = request.json
+    except json.decoder.JSONDecodeError:
+        abort(400, "No request body")
+    except BadRequest:
+        abort(400, "Bad request body")
+    if "session_id" not in content:
+        abort(403, "Session ID not provided")
+    session_id = content["session_id"]
+    if session_id not in COUNTERS:
+        abort(403, "Session ID not recognized")
+
+    COUNTERS[session_id] += 1
+
+    return jsonify(
+        {
+            "counter": COUNTERS[session_id],
+        }
+    )
+
+
+@simple_page.route("/login", methods=["POST"])
+def login():
+    global COUNTERS
+
+    try:
+        content = request.json
+    except json.decoder.JSONDecodeError:
+        abort(400, "No request body")
+    except BadRequest:
+        abort(400, "Bad request body")
+    if "username" not in content:
+        abort(401, "Username not provided")
+
+    if "session_id" in content:
+        logout()
+
+    session_id = hash(content["username"])
+
+    # I'm not sure what to do here if a user logs back in when already logged in
+    if session_id not in COUNTERS:
+        COUNTERS[session_id] = 0
+
+    return jsonify(
+        {
+            "session_id": session_id,
+        }
+    )
+
+
+@simple_page.route("/logout", methods=["POST"])
+def logout():
+    try:
+        content = request.json
+    except json.decoder.JSONDecodeError:
+        abort(400, "No request body")
+    except BadRequest:
+        abort(400, "Bad request body")
+    if "session_id" not in content:
+        abort(403, "Session ID not provided")
+    session_id = content["session_id"]
+
+    global COUNTERS
+    if session_id in COUNTERS:
+        del COUNTERS[session_id]
+
+    return 200  # Should be 204, I guess?
