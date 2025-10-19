@@ -12,7 +12,7 @@ simple_page = Blueprint("simple_page", __name__)
 COUNTERS: dict[str, int] = {}
 
 
-@simple_page.route("/", methods=["GET"])
+@simple_page.route("/", methods=["POST"])
 def hello_world():
     global COUNTERS
 
@@ -53,7 +53,7 @@ def login():
     if "session_id" in content:
         logout()
 
-    session_id = hash(content["username"])
+    session_id = str(hash(content["username"]))
 
     # I'm not sure what to do here if a user logs back in when already logged in
     if session_id not in COUNTERS:
