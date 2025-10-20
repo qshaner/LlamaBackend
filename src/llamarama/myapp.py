@@ -10,25 +10,21 @@ from werkzeug.exceptions import BadRequest
 simple_page = Blueprint("simple_page", __name__)
 
 COUNTERS: dict[str, int] = {}
+SESSION_ID = "X-Session-Id"
 
 
-@simple_page.route("/", methods=["POST"])
+@simple_page.route("/", methods=["GET", "POST"])
 def hello_world():
     global COUNTERS
+    session_id = request.headers.get(SESSION_ID)
 
-    try:
-        content = request.json
-    except json.decoder.JSONDecodeError:
-        abort(400, "No request body")
-    except BadRequest:
-        abort(400, "Bad request body")
-    if "session_id" not in content:
+    if session_id is None:
         abort(403, "Session ID not provided")
-    session_id = content["session_id"]
     if session_id not in COUNTERS:
         abort(403, "Session ID not recognized")
 
-    COUNTERS[session_id] += 1
+    if request.method == "POST":
+        COUNTERS[session_id] += 1
 
     return jsonify(
         {
@@ -50,7 +46,8 @@ def login():
     if "username" not in content:
         abort(401, "Username not provided")
 
-    if "session_id" in content:
+    session_id = request.headers.get(SESSION_ID)
+    if session_id:
         logout()
 
     session_id = str(hash(content["username"]))
@@ -68,15 +65,7 @@ def login():
 
 @simple_page.route("/logout", methods=["POST"])
 def logout():
-    try:
-        content = request.json
-    except json.decoder.JSONDecodeError:
-        abort(400, "No request body")
-    except BadRequest:
-        abort(400, "Bad request body")
-    if "session_id" not in content:
-        abort(403, "Session ID not provided")
-    session_id = content["session_id"]
+    session_id = request.headers.get(SESSION_ID)
 
     global COUNTERS
     if session_id in COUNTERS:
